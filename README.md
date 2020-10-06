@@ -1,2 +1,2 @@
 # SPTC
-Swap.Pet Token of Cooks for Chicken Farm
+Swap.Pet Token of Coops in Chicken Farm
