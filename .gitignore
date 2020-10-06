@@ -102,3 +102,10 @@ dist
 
 # TernJS port file
 .tern-port
+
+# openzeppelin
+.openzeppelin/.session
+.openzeppelin/dev-*.json
+build/
+
+# truffle 
