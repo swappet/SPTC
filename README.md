@@ -68,13 +68,13 @@ module.exports = {
   compilers: {
     solc: {
       version: "0.5.2",
-      docker: false,
+      // docker: true,        // default: false
       settings: {
        optimizer: {
          enabled: true,
          runs: 200
        },
-       evmVersion: "byzantium"
+       // evmVersion: "byzantium" // istanbul(default),constantinople,byzantium
       }
     }
   }
@@ -247,13 +247,120 @@ Compiling your contracts...
     ✓ deployer is owner (388ms)
 ```
 
-edit test config 'test-environment.config.js':
+edit test config 'test-environment.config.js'.
+
+## edit upgradeable contact
+install [OpenZeppelin reusable Ethereum Package](https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package):`$ npm install @openzeppelin/contracts-ethereum-package` 
+
+or : `$ npm install @openzeppelin/upgrades`
+
+All contracts have an UpgradeSafe suffix to avoid confusion with their counterparts in OpenZeppelin Contracts. For example, 'ERC20' becomes 'ERC20UpgradeSafe'.
+
+upgrade to use the same contact file:`$ npx oz upgrade`
+upgrade to use the diff contact file:`$ npx truffle migrate`
+
+## Upgrading Smart Contracts with truffle
+install plugin for truffle:
+```
+$ npm install --save-dev @openzeppelin/truffle-upgrades
+$ npm install --save-dev @nomiclabs/buidler-ethers ethers
+```
+
+deploy new contact with edit 'migrations/2_deploy_SPTC.js':
+```
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+
+const cSPTC = artifacts.require('SPTC'); // contact
+
+// flag for enums or structs in  deployProxy()/upgradeProxy()/prepareUpgrade() 
+const unsafeAllowCustomTypes = true
+
+module.exports = async function (deployer, network, accounts) { 
+  const instance = await deployProxy(cSPTC, [], { deployer,unsafeAllowCustomTypes });
+  console.log('Deployed:', instance.address);
+};
+```
+
+copy 'contracts/SPTC.sol' to 'contracts/SPTCv2.sol' and change something in 'SPTCv2.sol'.
+
+upgrade contact with edit 'migrations/3_upgrade_SPTCv2.js':
+```
+const { upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+
+const SPTC = artifacts.require('SPTC');
+const SPTCv2 = artifacts.require('SPTCv2');
+
+// flag for enums or structs in  deployProxy()/upgradeProxy()/prepareUpgrade() 
+const unsafeAllowCustomTypes = true
+
+module.exports = async function (deployer, network, accounts) {
+  const existing = await SPTC.deployed();
+  console.log("existing:", existing.address);
+  const instance = await upgradeProxy(existing.address, SPTCv2, { deployer,unsafeAllowCustomTypes });
+  console.log("Upgraded:", instance.address);
+};
+```
+call contact:
+```
+$ npx truffle develop
+truffle(develop)>compile
+truffle(develop)>deploy
+or
+truffle(develop)>migrate --reset --f 1 --to 2
+truffle(develop)>SPTC.deployed().then(instance=>contract=instance)
+truffle(develop)>contract.store(12)
+truffle(develop)>contract.retrieve()
+truffle(develop)>contract.store(33)
+truffle(develop)>migrate
+truffle(develop)>contract.retrieve()
+truffle(develop)>contract.store(55)
+truffle(develop)>contract.retrieve()
+truffle(develop)>contract.store(88)
+```
+
+test:
+```
+const { upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+
+const SPTC = artifacts.require('SPTC');
+const SPTCv2 = artifacts.require('SPTCv2');
+
+// flag for enums or structs in  deployProxy()/upgradeProxy()/prepareUpgrade() 
+const unsafeAllowCustomTypes = true
+
+module.exports = async function (deployer, network, accounts) {
+  const existing = await SPTC.deployed();
+  console.log("existing:", existing.address);
+  const instance = await upgradeProxy(existing.address, SPTCv2, { deployer,unsafeAllowCustomTypes });
+  console.log("Upgraded:", instance.address);
+};
+
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const { ethers, upgrades } = require("@nomiclabs/buidler");
+
+const SPTC = artifacts.require('SPTC');
+const SPTCv2 = artifacts.require('SPTCv2');
+
+// flag for enums or structs in  deployProxy()/upgradeProxy()/prepareUpgrade() 
+const unsafeAllowCustomTypes = true
+
+it('works before and after upgrading', async function () {
+  const instance = await upgrades.deployProxy(cSPTC, []); 
+  await upgrades.upgradeProxy(instance.address, SPTCv2); 
+});
+```
+
+## Managing ownership
+All proxies define an admin address which has the rights to upgrade them. By default, the admin is a proxy admin contract deployed behind the scenes. You can change the admin of a proxy by calling the `admin.changeAdminForProxy` function in the plugin of '@openzeppelin/truffle-upgrades'.
+
+The proxy admin contract also defines an owner address which has the rights to operate it. By default, this address is the externally owned account used during deployment. You can change the proxy admin owner by calling the `admin.transferProxyAdminOwnership` function in the plugin. Note that changing the proxy admin owner effectively transfers the power to upgrade any proxy in your whole project to the new owner, so use with care.
+
+Once you have transferred the rights to upgrade a proxy to another address, you can still use your local setup to validate and deploy the implementation contract. The plugins include a `prepareUpgrade` function that will validate that the new implementation is upgrade-safe and compatible with the previous one, and deploy it using your local Ethereum account. You can then execute the upgrade itself from the admin address.
 
 ## Connecting to Public Test Networks
 https://docs.openzeppelin.com/learn/connecting-to-public-test-networks
 
-## Upgrading Smart Contracts
-https://docs.openzeppelin.com/learn/upgrading-smart-contracts
+
 
 ## Preparing for Mainnet
 https://docs.openzeppelin.com/learn/preparing-for-mainnet

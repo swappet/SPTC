@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/presets/ERC721PresetM
 
 
 // Make SPTC inherit from the Ownable contract 
-contract SPTC is Initializable, ERC721PresetMinterPauserAutoIdUpgradeSafe { 
+contract SPTCv2 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeSafe { 
     uint256 private value;
 
     function initialize() public initializer {
@@ -26,7 +26,7 @@ contract SPTC is Initializable, ERC721PresetMinterPauserAutoIdUpgradeSafe {
     // Stores a new value in the contract
     // The onlyOwner modifier restricts who can call the store function
     function store(uint256 newValue) public {
-        value = newValue; // test upgrade as: value += newValue;
+        value += newValue;
         emit ValueChanged(newValue);
     }
 

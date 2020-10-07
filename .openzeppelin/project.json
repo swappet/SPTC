@@ -1,6 +1,8 @@
 {
   "manifestVersion": "2.2",
-  "contracts": {},
+  "contracts": {
+    "SPTC": "SPTC"
+  },
   "dependencies": {},
   "name": "SPTC",
   "version": "1.0.0",
