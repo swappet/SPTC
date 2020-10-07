@@ -106,6 +106,7 @@ dist
 # openzeppelin
 .openzeppelin/.session
 .openzeppelin/dev-*.json
+.openzeppelin/unknown-*.json
 build/
 
 # truffle 
